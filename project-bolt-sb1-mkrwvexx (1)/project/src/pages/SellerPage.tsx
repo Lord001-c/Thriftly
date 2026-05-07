@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, Package } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { supabase } from '../lib/supabase';
@@ -16,6 +15,8 @@ export default function SellerPage() {
   useEffect(() => {
     if (id) fetchSeller();
   }, [id]);
+
+  if (!id) return <Navigate to="/" replace />;
 
   async function fetchSeller() {
     const [sellerRes, listingsRes] = await Promise.all([
@@ -32,8 +33,7 @@ export default function SellerPage() {
     : '';
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <Navbar />
+    <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <Link
           to="/"
@@ -108,6 +108,6 @@ export default function SellerPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

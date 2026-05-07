@@ -1,54 +1,79 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import FilterPills from '../components/FilterPills';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
 import { supabase } from '../lib/supabase';
 import type { Listing, Category } from '../lib/types';
 
+const PAGE_SIZE = 50;
+
 export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
   const [category, setCategory] = useState<Category>('All');
   const [searchParams] = useSearchParams();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Reset and reload when filters change
   useEffect(() => {
-    fetchListings();
+    setListings([]);
+    setOffset(0);
+    setHasMore(true);
+    fetchListings(0, true);
   }, [category, searchParams]);
 
-  async function fetchListings() {
-    setLoading(true);
+  async function fetchListings(from: number, reset = false) {
+    if (reset) setLoading(true); else setLoadingMore(true);
+
     let query = supabase
       .from('listings')
-      .select('*, seller:sellers(*)')
-      .order('created_at', { ascending: false });
+      .select('id, title, price, image_clean, image_height, condition, size, category, status, quantity, created_at, seller_id')
+      .neq('status', 'sold')
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
 
-    if (category !== 'All') {
-      query = query.eq('category', category);
-    }
+    if (category !== 'All') query = query.eq('category', category);
 
     const search = searchParams.get('search');
-    if (search) {
-      query = query.ilike('title', `%${search}%`);
-    }
+    if (search) query = query.ilike('title', `%${search}%`);
 
     const { data } = await query;
-    setListings(data || []);
-    setLoading(false);
+    const rows = (data as unknown as Listing[]) || [];
+
+    setListings(prev => reset ? rows : [...prev, ...rows]);
+    setHasMore(rows.length === PAGE_SIZE);
+    setOffset(from + rows.length);
+
+    if (reset) setLoading(false); else setLoadingMore(false);
   }
 
+  // IntersectionObserver — fires when sentinel enters viewport
+  const onSentinel = useCallback((entries: IntersectionObserverEntry[]) => {
+    if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+      fetchListings(offset);
+    }
+  }, [hasMore, loadingMore, loading, offset]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(onSentinel, { rootMargin: '200px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onSentinel]);
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
-      <Navbar />
+    <>
       <FilterPills selected={category} onSelect={setCategory} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="px-2 pb-6 sm:px-4">
         {loading ? (
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : listings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -59,19 +84,30 @@ export default function HomePage() {
             <p className="text-zinc-400 text-xs mt-1">Try a different category or search</p>
           </div>
         ) : (
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
-            {listings.map((listing, i) => (
-              <div
-                key={listing.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${i * 50}ms` }}
-              >
-                <ProductCard listing={listing} />
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              {listings.map((listing, i) => (
+                <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${Math.min(i, 12) * 40}ms` }}>
+                  <ProductCard listing={listing} />
+                </div>
+              ))}
+            </div>
+
+            {/* Sentinel — triggers next page load */}
+            <div ref={sentinelRef} className="h-1" />
+
+            {loadingMore && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
               </div>
-            ))}
-          </div>
+            )}
+
+            {!hasMore && listings.length > 0 && (
+              <p className="text-center text-xs text-zinc-300 py-8">You've seen everything</p>
+            )}
+          </>
         )}
       </div>
-    </div>
+    </>
   );
 }

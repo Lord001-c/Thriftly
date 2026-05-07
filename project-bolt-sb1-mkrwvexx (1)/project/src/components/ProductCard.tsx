@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import type { Listing } from '../lib/types';
+import { useAuth } from '../lib/auth';
+import { useWishlist } from '../lib/wishlist';
 
 interface ProductCardProps {
   listing: Listing;
@@ -29,7 +32,7 @@ const PRODUCT_IMAGES: Record<string, string[]> = {
   ],
 };
 
-function getImageForListing(listing: Listing): string {
+function getFallbackImage(listing: Listing): string {
   const cat = listing.category as keyof typeof PRODUCT_IMAGES;
   const images = PRODUCT_IMAGES[cat] || PRODUCT_IMAGES.Tops;
   const index = listing.id.charCodeAt(0) % images.length;
@@ -37,35 +40,69 @@ function getImageForListing(listing: Listing): string {
 }
 
 export default function ProductCard({ listing }: ProductCardProps) {
-  const image = getImageForListing(listing);
+  const image = (listing as any).image_clean || getFallbackImage(listing);
+  const { user, profile } = useAuth();
+  const { wishlistedIds, toggleWishlist } = useWishlist();
+
+  const isBuyer = !!user && profile?.role !== 'seller';
+  const isWishlisted = wishlistedIds.has(listing.id);
+
+  const handleHeartClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(listing.id);
+  };
 
   return (
     <Link
       to={`/listing/${listing.id}`}
-      className="break-inside-avoid mb-4 block rounded-[20px] border border-zinc-100 bg-white overflow-hidden transition-all duration-200 ease-out hover:-translate-y-[3px] hover:border-zinc-200 group"
+      className="block rounded-[16px] sm:rounded-[20px] border border-zinc-100 bg-white overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm group relative"
     >
-      <div
-        className="bg-white overflow-hidden"
-        style={{ height: `${listing.image_height}px` }}
-      >
+      {/* Image — fixed 4:5 portrait ratio */}
+      <div className="relative w-full aspect-[4/5] bg-zinc-50 overflow-hidden">
         <img
           src={image}
           alt={listing.title}
           className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
           loading="lazy"
         />
+        {listing.status === 'sold' && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="px-3 py-1 rounded-full bg-zinc-950 text-white text-[10px] font-semibold tracking-wide">SOLD</span>
+          </div>
+        )}
+        {listing.status !== 'sold' && listing.quantity > 1 && (
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-zinc-700">{listing.quantity} in stock</span>
+          </div>
+        )}
+        {isBuyer && listing.status !== 'sold' && (
+          <button
+            onClick={handleHeartClick}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm shadow-sm flex items-center justify-center transition-all duration-200 hover:bg-white hover:scale-110 z-10"
+          >
+            <Heart
+              size={13}
+              className={`transition-all duration-200 ${
+                isWishlisted ? 'text-black fill-black' : 'text-zinc-400 fill-transparent'
+              }`}
+            />
+          </button>
+        )}
       </div>
-      <div className="p-4">
-        <h3 className="text-sm font-medium text-zinc-950 leading-tight line-clamp-2">
+
+      {/* Info */}
+      <div className="p-2.5 sm:p-3">
+        <h3 className="text-xs sm:text-sm font-medium text-zinc-950 leading-tight line-clamp-2">
           {listing.title}
         </h3>
-        <p className="text-base font-bold text-black mt-1">
-          ${listing.price.toFixed(2)}
+        <p className="text-sm sm:text-base font-bold text-black mt-0.5">
+          GHS {listing.price.toFixed(2)}
         </p>
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs text-zinc-400">{listing.condition}</span>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-[10px] sm:text-xs text-zinc-400">{listing.condition}</span>
           <span className="text-zinc-200">·</span>
-          <span className="text-xs text-zinc-400">{listing.size}</span>
+          <span className="text-[10px] sm:text-xs text-zinc-400">{listing.size}</span>
         </div>
       </div>
     </Link>

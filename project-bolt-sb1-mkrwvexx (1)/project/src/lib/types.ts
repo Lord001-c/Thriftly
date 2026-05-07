@@ -15,15 +15,20 @@ export interface Listing {
   condition: string;
   size: string;
   category: string;
+  brand: string;
   description: string;
   image_url: string;
+  image_clean: string;
   image_height: number;
+  images: string[];
+  quantity: number;
+  status: string;
   created_at: string;
   seller?: Seller;
 }
 
-export type Category = 'All' | 'Tops' | 'Bottoms' | 'Shoes' | 'Bags' | 'Accessories';
+export type Category = 'All' | 'Tops' | 'Bottoms' | 'Shoes' | 'Bags' | 'Accessories' | 'Dresses' | 'Outerwear' | 'Other';
 export type Condition = 'New' | 'Like New' | 'Good' | 'Fair';
 
-export const CATEGORIES: Category[] = ['All', 'Tops', 'Bottoms', 'Shoes', 'Bags', 'Accessories'];
+export const CATEGORIES: Category[] = ['All', 'Tops', 'Bottoms', 'Shoes', 'Bags', 'Accessories', 'Dresses', 'Outerwear', 'Other'];
 export const CONDITIONS: Condition[] = ['New', 'Like New', 'Good', 'Fair'];

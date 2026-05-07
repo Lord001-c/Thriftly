@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -13,7 +13,12 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isAdult, setIsAdult] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const navigate = useNavigate();
+
+  const allAccepted = isAdult && agreedToTerms && agreedToPrivacy;
   const { user } = useAuth();
 
   useEffect(() => {
@@ -25,7 +30,7 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -41,6 +46,33 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
+
+    const userId = authData.user?.id;
+    if (userId) {
+      await supabase
+        .from('profiles')
+        .update({ role: selectedRole, full_name: fullName })
+        .eq('id', userId);
+
+      if (selectedRole === 'seller') {
+        const { data: newSeller } = await supabase
+          .from('sellers')
+          .insert({ name: fullName })
+          .select('id')
+          .maybeSingle();
+
+        if (newSeller) {
+          await supabase
+            .from('seller_profiles')
+            .insert({ user_id: userId, seller_id: newSeller.id });
+        }
+      }
+    }
+
+    // Fire signup notification (fire-and-forget)
+    supabase.functions.invoke('notify-admin', {
+      body: { type: 'signup', name: fullName, email, role: selectedRole },
+    }).catch(() => {})
 
     if (selectedRole === 'seller') {
       navigate('/seller/dashboard');
@@ -165,10 +197,88 @@ export default function SignupPage() {
               </p>
             )}
 
+            {/* Acceptance checkboxes */}
+            <div className="space-y-3 pt-1">
+              {/* Checkbox 1 — Age */}
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => setIsAdult(v => !v)}
+                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                    isAdult ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                  }`}
+                >
+                  {isAdult && (
+                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-xs text-zinc-600 leading-relaxed">I am at least 18 years old</span>
+              </label>
+
+              {/* Checkbox 2 — Terms */}
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => setAgreedToTerms(v => !v)}
+                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                    agreedToTerms ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                  }`}
+                >
+                  {agreedToTerms && (
+                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-xs text-zinc-600 leading-relaxed">
+                  I agree to the{' '}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    onClick={e => e.stopPropagation()}
+                    className="text-zinc-900 underline underline-offset-2 hover:text-zinc-600 transition-colors"
+                  >
+                    Terms and Conditions
+                  </Link>
+                </span>
+              </label>
+
+              {/* Checkbox 3 — Privacy */}
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => setAgreedToPrivacy(v => !v)}
+                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                    agreedToPrivacy ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                  }`}
+                >
+                  {agreedToPrivacy && (
+                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
+                      <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-xs text-zinc-600 leading-relaxed">
+                  I agree to the{' '}
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    onClick={e => e.stopPropagation()}
+                    className="text-zinc-900 underline underline-offset-2 hover:text-zinc-600 transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-full bg-black text-white text-sm font-semibold hover:bg-zinc-800 disabled:bg-zinc-300 disabled:cursor-not-allowed transition-colors duration-200"
+              disabled={loading || !allAccepted}
+              className={`w-full py-3.5 rounded-full text-sm font-semibold transition-all duration-200 ${
+                allAccepted && !loading
+                  ? 'bg-black text-white hover:bg-zinc-800 cursor-pointer'
+                  : 'bg-zinc-300 text-zinc-400 cursor-not-allowed'
+              }`}
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
