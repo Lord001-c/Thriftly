@@ -6,6 +6,7 @@ export interface UserProfile {
   role: 'buyer' | 'seller';
   full_name: string;
   avatar_url: string;
+  terms_accepted: boolean;
 }
 
 interface AuthContextType {
@@ -14,6 +15,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -29,11 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('role, full_name, avatar_url')
+      .select('role, full_name, avatar_url, terms_accepted')
       .eq('id', userId)
       .maybeSingle();
 
@@ -42,16 +46,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role as 'buyer' | 'seller',
         full_name: data.full_name || '',
         avatar_url: data.avatar_url || '',
+        terms_accepted: data.terms_accepted ?? false,
       });
     } else {
       setProfile(null);
     }
   }
 
+  const refreshProfile = async (userId?: string) => {
+    const id = userId ?? currentUserId;
+    if (id) await fetchProfile(id);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setCurrentUserId(session?.user?.id ?? null);
       if (session?.user) {
         fetchProfile(session.user.id).finally(() => setLoading(false));
       } else {
@@ -63,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setCurrentUserId(session?.user?.id ?? null);
       if (session?.user) {
         fetchProfile(session.user.id).finally(() => setLoading(false));
       } else {
@@ -80,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

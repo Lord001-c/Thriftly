@@ -67,7 +67,7 @@ export default function AdminPayoutsPage() {
       return {
         order_id: o.id,
         listing_title: listingMap.get(o.listing_id) || 'Unknown item',
-        seller_payout: Number(o.seller_payout ?? o.amount * 0.85),
+        seller_payout: Number(o.seller_payout ?? o.amount),
         amount: Number(o.amount),
         created_at: o.created_at,
         payout_status: o.payout_status ?? 'pending',
@@ -157,7 +157,7 @@ export default function AdminPayoutsPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-lg font-bold text-zinc-950">GHS {row.seller_payout.toFixed(2)}</p>
-                    <p className="text-[10px] text-zinc-400 mb-3">of GHS {row.amount.toFixed(2)} sale</p>
+                    <div className="mb-3" />
                     <button
                       onClick={() => markPaid(row.order_id)}
                       disabled={marking.has(row.order_id)}

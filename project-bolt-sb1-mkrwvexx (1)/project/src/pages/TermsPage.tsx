@@ -68,9 +68,7 @@ const sections: { title: string; body: React.ReactNode }[] = [
           <li>Not list prohibited items (see Section 9)</li>
         </ul>
         <p>
-          <span className="font-medium text-zinc-700">Commission:</span> Thriftly charges a 15%
-          platform fee on every sale. You receive 85% of the sale price. This is deducted
-          automatically before your payout is processed.
+          <span className="font-medium text-zinc-700">Free to sell:</span> Thriftly charges no commission or platform fee. You receive 100% of the sale price.
         </p>
       </div>
     ),
@@ -192,7 +190,7 @@ const sections: { title: string; body: React.ReactNode }[] = [
         <li>Thriftly is a marketplace platform — we are not a party to transactions between Buyers and Sellers</li>
         <li>We are not liable for the quality, safety, or legality of items listed</li>
         <li>We are not liable for delivery failures or disputes between users</li>
-        <li>Our maximum liability in any situation is limited to the platform fee collected on the relevant transaction</li>
+        <li>Our maximum liability in any situation is limited to the value of the relevant transaction</li>
       </ul>
     ),
   },

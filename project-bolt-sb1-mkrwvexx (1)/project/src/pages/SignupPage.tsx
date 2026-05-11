@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, Tag } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -17,18 +17,21 @@ export default function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const navigate = useNavigate();
+  const isSigningUp = useRef(false);
 
   const allAccepted = isAdult && agreedToTerms && agreedToPrivacy;
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
 
+  // Redirect already-logged-in users, but not during an active signup
   useEffect(() => {
-    if (user) navigate('/', { replace: true });
+    if (user && !isSigningUp.current) navigate('/', { replace: true });
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    isSigningUp.current = true;
 
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -44,6 +47,7 @@ export default function SignupPage() {
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
+      isSigningUp.current = false;
       return;
     }
 
@@ -51,7 +55,7 @@ export default function SignupPage() {
     if (userId) {
       await supabase
         .from('profiles')
-        .update({ role: selectedRole, full_name: fullName })
+        .update({ role: selectedRole, full_name: fullName, terms_accepted: true })
         .eq('id', userId);
 
       if (selectedRole === 'seller') {
@@ -67,6 +71,9 @@ export default function SignupPage() {
             .insert({ user_id: userId, seller_id: newSeller.id });
         }
       }
+
+      // Refresh profile with userId directly — don't rely on auth state timing
+      await refreshProfile(userId);
     }
 
     // Fire signup notification (fire-and-forget)
@@ -74,6 +81,7 @@ export default function SignupPage() {
       body: { type: 'signup', name: fullName, email, role: selectedRole },
     }).catch(() => {})
 
+    isSigningUp.current = false;
     if (selectedRole === 'seller') {
       navigate('/seller/dashboard');
     } else {
@@ -201,12 +209,15 @@ export default function SignupPage() {
             <div className="space-y-3 pt-1">
               {/* Checkbox 1 — Age */}
               <label className="flex items-start gap-3 cursor-pointer select-none">
-                <div
-                  onClick={() => setIsAdult(v => !v)}
-                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    isAdult ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
-                  }`}
-                >
+                <input
+                  type="checkbox"
+                  checked={isAdult}
+                  onChange={e => setIsAdult(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                  isAdult ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                }`}>
                   {isAdult && (
                     <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                       <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -218,12 +229,15 @@ export default function SignupPage() {
 
               {/* Checkbox 2 — Terms */}
               <label className="flex items-start gap-3 cursor-pointer select-none">
-                <div
-                  onClick={() => setAgreedToTerms(v => !v)}
-                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    agreedToTerms ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
-                  }`}
-                >
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                  agreedToTerms ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                }`}>
                   {agreedToTerms && (
                     <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                       <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -245,12 +259,15 @@ export default function SignupPage() {
 
               {/* Checkbox 3 — Privacy */}
               <label className="flex items-start gap-3 cursor-pointer select-none">
-                <div
-                  onClick={() => setAgreedToPrivacy(v => !v)}
-                  className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    agreedToPrivacy ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
-                  }`}
-                >
+                <input
+                  type="checkbox"
+                  checked={agreedToPrivacy}
+                  onChange={e => setAgreedToPrivacy(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`mt-0.5 w-4 h-4 rounded-md shrink-0 flex items-center justify-center border transition-all duration-200 ${
+                  agreedToPrivacy ? 'bg-black border-black' : 'bg-zinc-200 border-zinc-200'
+                }`}>
                   {agreedToPrivacy && (
                     <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
                       <path d="M1.5 5L3.8 7.5L8.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

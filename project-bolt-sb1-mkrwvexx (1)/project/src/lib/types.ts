@@ -23,12 +23,15 @@ export interface Listing {
   images: string[];
   quantity: number;
   status: string;
+  listing_type: 'secondhand' | 'brand_new';
   created_at: string;
   seller?: Seller;
 }
 
-export type Category = 'All' | 'Tops' | 'Bottoms' | 'Shoes' | 'Bags' | 'Accessories' | 'Dresses' | 'Outerwear' | 'Other';
+export type ListingType = 'secondhand' | 'brand_new';
+
+export type Category = 'All' | 'Men' | 'Women' | 'Tops' | 'Bottoms' | 'Shoes' | 'Bags' | 'Accessories' | 'Dresses' | 'Outerwear' | 'Other';
 export type Condition = 'New' | 'Like New' | 'Good' | 'Fair';
 
-export const CATEGORIES: Category[] = ['All', 'Tops', 'Bottoms', 'Shoes', 'Bags', 'Accessories', 'Dresses', 'Outerwear', 'Other'];
+export const CATEGORIES: Category[] = ['All', 'Men', 'Women', 'Tops', 'Bottoms', 'Shoes', 'Bags', 'Accessories', 'Dresses', 'Outerwear', 'Other'];
 export const CONDITIONS: Condition[] = ['New', 'Like New', 'Good', 'Fair'];

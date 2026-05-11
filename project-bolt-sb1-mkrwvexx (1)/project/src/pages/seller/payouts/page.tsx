@@ -95,7 +95,7 @@ export default function SellerPayoutsPage() {
     setOrders(ordersRaw.map((o: any) => ({
       id: o.id,
       amount: Number(o.amount),
-      seller_payout: Number(o.seller_payout ?? o.amount * 0.85),
+      seller_payout: Number(o.seller_payout ?? o.amount),
       payout_status: o.payout_status ?? 'pending',
       created_at: o.created_at,
       listing_title: listingMap.get(o.listing_id) || 'Unknown item',
@@ -241,7 +241,6 @@ export default function SellerPayoutsPage() {
                 </div>
                 <div className="text-right shrink-0 ml-4">
                   <p className="text-sm font-bold text-zinc-950">GHS {order.seller_payout.toFixed(2)}</p>
-                  <span className="text-[10px] text-zinc-400">85% of GHS {order.amount.toFixed(2)}</span>
                 </div>
               </div>
             ))}
@@ -251,7 +250,7 @@ export default function SellerPayoutsPage() {
 
       <div className="p-4 rounded-[16px] bg-zinc-50 border border-zinc-100">
         <p className="text-xs text-zinc-400 leading-relaxed">
-          Payouts are processed daily at midnight. You receive 85% of each sale price sent to your MoMo number.
+          Payouts are processed daily at midnight. You receive the full sale price sent to your MoMo number.
         </p>
       </div>
 

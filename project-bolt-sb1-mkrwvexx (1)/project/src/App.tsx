@@ -19,6 +19,7 @@ import OrderDetailPage from './pages/orders/[id]/page';
 import ConfirmDeliveryPage from './pages/ConfirmDeliveryPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import AcceptTermsPage from './pages/AcceptTermsPage';
 // Admin pages
 import AdminPayoutsPage from './pages/admin/PayoutsPage';
 // Seller pages
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/confirm/:orderId" element={<ConfirmDeliveryPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/accept-terms" element={<AcceptTermsPage />} />
 
             {/* Buyer routes — buyer navbar */}
             <Route element={<BuyerLayout />}>

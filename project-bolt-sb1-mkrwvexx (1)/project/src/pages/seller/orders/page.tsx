@@ -209,8 +209,7 @@ export default function SellerOrdersPage() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-base font-bold text-zinc-950">GHS {(Number(order.amount) * 0.85).toFixed(2)}</p>
-                    <p className="text-[10px] text-zinc-400">you earn</p>
+                    <p className="text-base font-bold text-zinc-950">GHS {Number(order.amount).toFixed(2)}</p>
                   </div>
                 </div>
 

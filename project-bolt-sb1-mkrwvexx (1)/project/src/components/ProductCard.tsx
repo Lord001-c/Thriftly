@@ -93,6 +93,13 @@ export default function ProductCard({ listing }: ProductCardProps) {
 
       {/* Info */}
       <div className="p-2.5 sm:p-3">
+        <div className="flex items-center gap-1.5 mb-1">
+          {(listing as any).listing_type === 'brand_new' ? (
+            <span className="px-2 py-0.5 rounded-full bg-zinc-950 text-white text-[9px] sm:text-[10px] font-semibold tracking-wide">Brand New</span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[9px] sm:text-[10px] font-medium">Secondhand</span>
+          )}
+        </div>
         <h3 className="text-xs sm:text-sm font-medium text-zinc-950 leading-tight line-clamp-2">
           {listing.title}
         </h3>
@@ -101,8 +108,7 @@ export default function ProductCard({ listing }: ProductCardProps) {
         </p>
         <div className="flex items-center gap-1.5 mt-1">
           <span className="text-[10px] sm:text-xs text-zinc-400">{listing.condition}</span>
-          <span className="text-zinc-200">·</span>
-          <span className="text-[10px] sm:text-xs text-zinc-400">{listing.size}</span>
+          {listing.size && <><span className="text-zinc-200">·</span><span className="text-[10px] sm:text-xs text-zinc-400">{listing.size}</span></>}
         </div>
       </div>
     </Link>

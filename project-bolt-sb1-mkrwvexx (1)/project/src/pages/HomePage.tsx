@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import FilterPills from '../components/FilterPills';
 import ProductCard from '../components/ProductCard';
 import SkeletonCard from '../components/SkeletonCard';
+import WelcomeModal from '../components/WelcomeModal';
 import { supabase } from '../lib/supabase';
 import type { Listing, Category } from '../lib/types';
 
@@ -68,6 +69,7 @@ export default function HomePage() {
 
   return (
     <>
+      <WelcomeModal />
       <FilterPills selected={category} onSelect={setCategory} />
 
       <div className="px-2 pb-6 sm:px-4">

@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { Package, DollarSign, ShoppingBag, Plus, Clock, ArrowRight } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../lib/auth';
+import WelcomeModal from '../../../components/WelcomeModal';
 
 interface Stats {
   earnedThisMonth: number;
@@ -153,7 +154,7 @@ export default function SellerDashboardPage() {
     ]);
 
     const earned = ((ordersRes.data || []) as RawOrderAmount[]).reduce(
-      (sum, o) => sum + Number(o.amount) * 0.85,
+      (sum, o) => sum + Number(o.amount),
       0
     );
 
@@ -207,6 +208,7 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="p-6 sm:p-8 max-w-7xl mx-auto">
+      <WelcomeModal />
       {/* Toast notification */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 px-5 py-3 bg-zinc-950 text-white text-sm font-medium rounded-full shadow-lg animate-fade-in">
@@ -238,7 +240,6 @@ export default function SellerDashboardPage() {
           icon={DollarSign}
           label="Earned this month"
           value={`GHS ${stats.earnedThisMonth.toFixed(2)}`}
-          sub="after 15% fee"
           loading={loading}
         />
         <StatCard
@@ -304,7 +305,7 @@ export default function SellerDashboardPage() {
                     <p className="text-xs text-zinc-400">by {order.buyerName}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-zinc-950">GHS {(Number(order.amount) * 0.85).toFixed(2)}</p>
+                    <p className="text-sm font-bold text-zinc-950">GHS {Number(order.amount).toFixed(2)}</p>
                     <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${STATUS_STYLES[order.status] || 'bg-zinc-100 text-zinc-600'}`}>
                       {order.status}
                     </span>
